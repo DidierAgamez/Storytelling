@@ -29,24 +29,24 @@ SHP_DIR    = "shp_departamentos"
 YEARS      = [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
 
 # Paleta de color — psicologia del color aplicada a brechas de desigualdad
-# Brecha baja (acceso mas igualitario) -> Ambar dorado (oportunidad, luz)
-# Brecha alta (desigualdad territorial grave) -> Azul muy oscuro (profundidad, privacion)
-COLOR_CABECERAS = "#FFB300"          # ambar — acceso urbano, menor privacion
-COLOR_RURAL     = "#1a3a6b"          # azul oscuro — privacion rural profunda
-COLOR_FILL      = "rgba(26,58,107,0.15)"  # fill area brecha — translucido
+# Brecha baja (acceso mas igualitario) -> Azul oscuro (profundidad, equidad hidrica)
+# Brecha alta (desigualdad territorial grave) -> Ambar dorado (aridez, privacion rural)
+COLOR_CABECERAS = "#1a3a6b"          # azul oscuro — acceso urbano, equidad
+COLOR_RURAL     = "#FFB300"          # ambar — privacion rural, desigualdad
+COLOR_FILL      = "rgba(255,179,0,0.15)"  # fill area brecha — translucido calido
 COLOR_PAGE_BG   = "#f7f5f0"          # fondo pagina — neutro calido
 COLOR_CARD_BG   = "#ffffff"
 COLOR_TEXT_DARK = "#0a1628"
 COLOR_TEXT_MID  = "#4a5568"
 
-# Colorscale del mapa: brecha baja=dorado, brecha alta=azul oscuro
+# Colorscale del mapa: brecha baja=azul oscuro (equidad), brecha alta=ambar dorado (desigualdad)
 MAP_COLORSCALE = [
-    [0.00, "#FFB300"],   # brecha muy baja  -> ambar  (< 5 pp)
-    [0.08, "#c4a35a"],   # brecha baja      -> oro transicional
-    [0.20, "#8a9ab5"],   # brecha media     -> gris azulado
-    [0.40, "#4a7ab5"],   # brecha moderada  -> azul medio
-    [0.65, "#1a3a6b"],   # brecha alta      -> azul oscuro
-    [1.00, "#0a1628"],   # brecha extrema   -> azul casi negro
+    [0.00, "#0a1628"],   # brecha muy baja  -> azul casi negro (equidad)
+    [0.08, "#1a3a6b"],   # brecha baja      -> azul oscuro
+    [0.20, "#4a7ab5"],   # brecha media     -> azul medio
+    [0.40, "#8a9ab5"],   # brecha moderada  -> gris azulado
+    [0.65, "#c4a35a"],   # brecha alta      -> oro transicional
+    [1.00, "#FFB300"],   # brecha extrema   -> ambar (desigualdad extrema)
 ]
 
 # Diccionario de equivalencias entre nombres del shapefile DANE y del Excel
@@ -223,8 +223,8 @@ def build_map(gdf, year: int, selected_dpto: str = None) -> go.Figure:
     Build choropleth map of brecha (Rural - Cabeceras) for a given year.
 
     Color encodes the gap in percentage points:
-    - Low gap (near zero) -> amber gold   (#FFB300): more equal territory
-    - High gap (>70pp)    -> dark blue    (#0a1628): deep structural inequality
+    - Low gap (near zero) -> dark blue    (#0a1628): more equal territory (equidad)
+    - High gap (>70pp)    -> amber gold   (#FFB300): deep structural inequality
     """
     brecha_col = f"Brecha_{year}"
 
@@ -256,7 +256,7 @@ def build_map(gdf, year: int, selected_dpto: str = None) -> go.Figure:
         dpto = row.get("Departamento", row.get("dpto_norm", ""))
         if selected_dpto and normalize_name(str(dpto)) == normalize_name(str(selected_dpto)):
             line_widths.append(3)
-            line_colors.append("#FFB300")
+            line_colors.append(COLOR_RURAL)
         else:
             line_widths.append(0.5)
             line_colors.append("#ffffff")
@@ -438,7 +438,7 @@ def build_dept_modal_chart(dept_row: pd.Series, dept_name: str) -> go.Figure:
         marker=dict(size=8, color=COLOR_CABECERAS),
         text=[f"{v:.1f}%" for v in cab_vals],
         textposition="bottom center",
-        textfont=dict(size=9, color="#b8860b"),
+        textfont=dict(size=9, color=COLOR_CABECERAS),
         hovertemplate="Cabeceras %{x}: <b>%{y:.1f}%</b><extra></extra>",
     ))
 
@@ -713,7 +713,7 @@ app.layout = html.Div(
                             html.Div(style={"display": "flex", "alignItems": "center",
                                            "marginBottom": "4px"}, children=[
                                 html.Div(style={"width": "14px", "height": "14px",
-                                               "backgroundColor": "#FFB300",
+                                               "backgroundColor": COLOR_CABECERAS,
                                                "borderRadius": "3px", "marginRight": "8px"}),
                                 html.P("Brecha baja — mayor equidad",
                                        style={"fontSize": "11px", "color": COLOR_TEXT_MID, "margin": 0}),
@@ -721,14 +721,14 @@ app.layout = html.Div(
                             html.Div(style={"display": "flex", "alignItems": "center",
                                            "marginBottom": "4px"}, children=[
                                 html.Div(style={"width": "14px", "height": "14px",
-                                               "backgroundColor": "#4a7ab5",
+                                               "backgroundColor": "#8a9ab5",
                                                "borderRadius": "3px", "marginRight": "8px"}),
                                 html.P("Brecha media — alerta territorial",
                                        style={"fontSize": "11px", "color": COLOR_TEXT_MID, "margin": 0}),
                             ]),
                             html.Div(style={"display": "flex", "alignItems": "center"}, children=[
                                 html.Div(style={"width": "14px", "height": "14px",
-                                               "backgroundColor": "#0a1628",
+                                               "backgroundColor": COLOR_RURAL,
                                                "borderRadius": "3px", "marginRight": "8px"}),
                                 html.P("Brecha alta — desigualdad estructural",
                                        style={"fontSize": "11px", "color": COLOR_TEXT_MID, "margin": 0}),
@@ -951,7 +951,7 @@ def export_static_html(output_path: str = "agua_brecha_mapa.html"):
                 text=(
                     "Fuente: DANE — ECV 2018-2025. Cartografia: MGN2024 DANE. "
                     "Nota: Color del mapa = brecha (Rural - Cabeceras). "
-                    "Dorado = menor brecha. Azul oscuro = mayor desigualdad."
+                    "Azul oscuro = menor brecha. Dorado = mayor desigualdad."
                 ),
                 showarrow=False,
                 font=dict(size=9, color="#999"),
